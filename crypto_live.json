@@ -1,0 +1,469 @@
+{
+  "name": "crypto_live",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -144,
+        -16
+      ],
+      "id": "40baf165-346a-4387-9a09-fdb04b0d0d28",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.coingecko.com/api/v3/simple/price?ids={{ $json.coin || $json.query}}&vs_currencies=usd&include_24hr_change=true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        16
+      ],
+      "id": "6c37da5f-d0bb-401e-8310-dfa2ba602982",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Here is current price data:\n{{ $json.summary }}\n\nSummarize notable moves in bullet points. Flag anything over 5% change."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        48
+      ],
+      "id": "89db459c-c06c-4082-8286-996cd9a2ef16",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Lqz8TjkntAKov6m3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\nlet lines = [];\nfor (const coin in data) {\n  const price = data[coin].usd;\n  const change = data[coin].usd_24h_change !== undefined \n    ? data[coin].usd_24h_change.toFixed(2) \n    : \"N/A\";\n  lines.push(`${coin}: $${price} (${change}% 24h)`);\n}\n\nlet chatId;\ntry {\n  chatId = $('Code in JavaScript1').item.json.chatId;\n} catch (e) {\n  chatId = undefined;\n}\n\nreturn [{ json: { summary: lines.join('\\n'), chatId: chatId } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        32
+      ],
+      "id": "57ba0a46-af31-448e-bd32-2960d3f0a705",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -288,
+        128
+      ],
+      "id": "8dafa8ca-d5ef-4437-aadf-30ea499f6f90",
+      "name": "Telegram Trigger",
+      "webhookId": "0d62fa55-c2cf-4675-8d94-c57e4d74c349",
+      "credentials": {
+        "telegramApi": {
+          "id": "XMe3kAgJ2MaBGUIY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nlet chatId, query;\ntry {\n  chatId = $input.first().json.message.chat.id;\n  query = $input.first().json.message.text;\n} catch (e) {\n  chatId = undefined;\n  query = undefined;\n}\nif (rows.length === 0) {\n  return [{ json: { found: false, chatId: chatId, query: query } }];\n}\nreturn [{ json: { found: true, coin: rows[0].json.id, chatId: chatId, query: query } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        144
+      ],
+      "id": "0ed9599d-3493-495a-9bcf-1c17bc93b5db",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        -192
+      ],
+      "id": "1f76d24f-a062-4c10-9575-9b60391de83e",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.coingecko.com/api/v3/coins/list",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        -176
+      ],
+      "id": "1a7d7205-c9bd-4213-994a-a099761586fd",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code in JavaScript2 — just pass through, no static data needed\nconst allItems = $input.all();\nconst coinList = allItems.map(item => item.json);\nreturn coinList.map(coin => ({ json: coin }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -176
+      ],
+      "id": "c3a7bdea-a7e7-47e3-a46e-7885461df99e",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "98cd2afd-96e0-49e8-96ac-14db32acb32c",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "8eefc9e2-40c2-40eb-acf8-537e3b08d837",
+              "leftValue": "={{ $('Telegram Trigger').item.json.message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        160
+      ],
+      "id": "a025f0ea-c233-4d37-b5ce-28b54941a7ce",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Couldn't find '{{ $json.query }}' — try the full name or exact ticker.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        224
+      ],
+      "id": "28e9e13d-f210-46d5-bf55-af4d79cb40c3",
+      "name": "Send a text message",
+      "webhookId": "7d6747b5-6259-46ac-9133-67f6753425a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "XMe3kAgJ2MaBGUIY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Code in JavaScript').item.json.chatId || \"1433399376\" }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        208
+      ],
+      "id": "806f7454-2fd8-4630-8645-749d87a321bd",
+      "name": "Send a text message1",
+      "webhookId": "f4499230-1133-414c-be81-3615bfce59d2",
+      "credentials": {
+        "telegramApi": {
+          "id": "XMe3kAgJ2MaBGUIY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { coin: \"litentry,hyperliquid,sui,fogo,grass,jito-governance-token,zcash\" } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        -16
+      ],
+      "id": "3e90a46d-4ead-4b8a-994b-d46c8d533a3e",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "value": "hukdk3H34VGfd47d",
+          "mode": "list",
+          "cachedResultName": "crypt",
+          "cachedResultUrl": "/projects/SM8le55AtNLHoRA5/datatables/hukdk3H34VGfd47d"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "keyValue": "={{ $json.name }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        -160
+      ],
+      "id": "4644e84a-ebf9-4313-bbd7-3a2b4b125316",
+      "name": "If row does not exist"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.content.parts[0].text; // adjust field name to match your AI node's output\nconst cleaned = text\n  .replace(/\\*\\*/g, '')   // remove bold markers\n  .replace(/#{1,6}\\s?/g, '') // remove markdown headers\n  .replace(/_/g, '');      // remove italics markers\n\nreturn [{ json: { text: cleaned } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        48
+      ],
+      "id": "e7dddbe7-8ddb-41b8-8348-2d68e38ffe4b",
+      "name": "Code in JavaScript4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "If row does not exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "15635221-0bc2-40bc-8883-fc7e86a2d3ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c9af124fa7809020a189bbe4cc00d1f6bc105f72b3dbab29d0017f172cb664a"
+  },
+  "nodeGroups": [],
+  "id": "D9DBrU3tHaZ08InI",
+  "tags": []
+}
