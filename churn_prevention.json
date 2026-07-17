@@ -1,0 +1,676 @@
+{
+  "name": "churn_prevention",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        -32
+      ],
+      "id": "5e75b8c9-789d-49fa-96e0-d20c101e7e95",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "15Sl3wzo4Dy3GkNm-MfogOqN4SImMDcWVMfeGdbeNKPc",
+          "mode": "list",
+          "cachedResultName": "Diyana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15Sl3wzo4Dy3GkNm-MfogOqN4SImMDcWVMfeGdbeNKPc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1687490917,
+          "mode": "list",
+          "cachedResultName": "Mental Toughness Level",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15Sl3wzo4Dy3GkNm-MfogOqN4SImMDcWVMfeGdbeNKPc/edit#gid=1687490917"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -80,
+        -48
+      ],
+      "id": "9d5c0490-15ca-48d1-9ab9-aeba9989e56f",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FstvHo2kBT2QUcNS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c9e6d07d-a23a-4199-bf98-0de45898e80b",
+              "leftValue": "={{ $json['Last Login Date'] }}",
+              "rightValue": "={{ $today.minus({days: 7}).toISODate() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "beforeOrEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "3ce7e5d1-35fb-4626-93b0-2313a799029b",
+      "name": "If",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bc16f19f-ec4b-42cc-b235-6ee02a1e8861",
+              "leftValue": "={{ $json['Last Login Date'] }}",
+              "rightValue": "={{ $today.minus({days: 30}).toISODate() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "beforeOrEquals"
+              }
+            },
+            {
+              "id": "b13630aa-1703-40ec-a2bb-6ac0c69ddf50",
+              "leftValue": "={{ $json['Payment Status'] }}",
+              "rightValue": "Overdue",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        -32
+      ],
+      "id": "6565235f-301b-48a8-9cda-f7e26bf8fd7f",
+      "name": "If1",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0",
+          "mode": "list",
+          "cachedResultName": "User Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 166436532,
+          "mode": "list",
+          "cachedResultName": "vikascheru@gmail.com",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0/edit#gid=166436532"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Client Name": "={{ $json['Customer Name'] }}",
+            "Freelancer Email": "={{ $json.Email }}",
+            "Project Deadline": "={{ $json['Last Login Date'] }}",
+            "Status": "={{ $json['Payment Status'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project Deadline",
+              "displayName": "Project Deadline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assigned Freelancer",
+              "displayName": "Assigned Freelancer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Freelancer Email",
+              "displayName": "Freelancer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Client Email",
+              "displayName": "Client Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        432,
+        -240
+      ],
+      "id": "6db0fc05-12c4-44f5-8917-43b9a8f7e501",
+      "name": "Append row in sheet",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FstvHo2kBT2QUcNS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "-1004325396040",
+        "text": "={{ $json['Customer Name'] }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        -304
+      ],
+      "id": "1caae7cf-f9c9-4d3a-b34d-18f8692ed0bc",
+      "name": "Send a text message",
+      "webhookId": "e034a5c5-65ce-40d2-bdd6-0e8ab3f7abd1",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "TuV0Uh2Bwnfmqcg9",
+          "name": "Telegram account 3"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "15Sl3wzo4Dy3GkNm-MfogOqN4SImMDcWVMfeGdbeNKPc",
+          "mode": "list",
+          "cachedResultName": "Diyana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15Sl3wzo4Dy3GkNm-MfogOqN4SImMDcWVMfeGdbeNKPc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1687490917,
+          "mode": "list",
+          "cachedResultName": "Mental Toughness Level",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15Sl3wzo4Dy3GkNm-MfogOqN4SImMDcWVMfeGdbeNKPc/edit#gid=1687490917"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Flag": "URGENT",
+            "Customer Name": "={{ $json['Customer Name'] }}"
+          },
+          "matchingColumns": [
+            "Customer Name"
+          ],
+          "schema": [
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Subscription Plan",
+              "displayName": "Subscription Plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last Login Date",
+              "displayName": "Last Login Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Payment Status",
+              "displayName": "Payment Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Flag",
+              "displayName": "Flag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        -208
+      ],
+      "id": "7f1a7176-9606-4a9c-9822-2fc5b8300693",
+      "name": "Update row in sheet",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FstvHo2kBT2QUcNS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0",
+          "mode": "list",
+          "cachedResultName": "User Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 166436532,
+          "mode": "list",
+          "cachedResultName": "vikascheru@gmail.com",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0/edit#gid=166436532"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Client Name": "={{ $json['Customer Name'] }}",
+            "Freelancer Email": "={{ $json.Email }}",
+            "Project Deadline": "={{ $json['Last Login Date'] }}",
+            "Status": "={{ $json['Payment Status'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project Deadline",
+              "displayName": "Project Deadline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assigned Freelancer",
+              "displayName": "Assigned Freelancer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Freelancer Email",
+              "displayName": "Freelancer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Client Email",
+              "displayName": "Client Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        -48
+      ],
+      "id": "b447d617-fd82-41e5-8fe8-fddf10e41fa8",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FstvHo2kBT2QUcNS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "kCLzThhMFcnvrLGD",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/kCLzThhMFcnvrLGD",
+          "cachedResultName": "subdemo"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Plan": "={{ $json['Subscription Plan'] }}",
+            "Email": "={{ $json.Email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Plan",
+              "displayName": "Plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        144
+      ],
+      "id": "f51a9be3-ca42-4c48-abf0-026e62e158c3",
+      "name": "Call 'subdemo'",
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'subdemo'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'subdemo'": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "81a8d366-eca7-4a57-b233-0d49c6c94a3d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c9af124fa7809020a189bbe4cc00d1f6bc105f72b3dbab29d0017f172cb664a"
+  },
+  "nodeGroups": [],
+  "id": "GMcnbhvTyiqcIZ5J",
+  "tags": []
+}
