@@ -1,0 +1,341 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a8f98290-1172-46d7-bc08-09b0984d9855",
+      "name": "Telegram Trigger",
+      "webhookId": "4178b005-194d-415c-82c9-1b7d106fd7f1",
+      "credentials": {
+        "telegramApi": {
+          "id": "LHKh5rRCzoNfAF1K",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.message.text;\nconst matches = [...text.matchAll(/\\d+(\\.\\d+)?/g)];\nif (matches.length === 0) {\n  return {\n    json: {\n      isExpense: false,\n      reply: \"This is an expense tracker bot — share your expenses here, e.g. '500 lunch' or '200 taxi 150 coffee'.\"\n    }\n  };\n}\n\nconst expenses = [];\n\nfor (let i = 0; i < matches.length; i++) {\n  const amount = parseFloat(matches[i][0]);\n\n  const currentStart = matches[i].index;\n  const currentEnd = currentStart + matches[i][0].length;\n\n  const prevEnd = i > 0\n    ? matches[i - 1].index + matches[i - 1][0].length\n    : 0;\n\n  const nextStart = i < matches.length - 1\n    ? matches[i + 1].index\n    : text.length;\n\n  // Text before the number\n  const before = text.slice(prevEnd, currentStart).trim();\n\n  // Text after the number\n  const after = text.slice(currentEnd, nextStart).trim();\n\n  // If there's text after the amount, use it.\n  // Otherwise use the text before it.\n  const description = after || before;\n\n  expenses.push({\n    amount,\n    description,\n  });\n}\n\n// Return one item per expense\nreturn expenses.map(expense => ({\n  json: {\n    isExpense: true,\n    expense: expense,\n        }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        -16
+      ],
+      "id": "04a70248-d3ee-4a04-a975-6578619a6dbc",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0",
+          "mode": "list",
+          "cachedResultName": "Expense_track",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 718577063,
+          "mode": "list",
+          "cachedResultName": "vikas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0/edit#gid=718577063"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chat_id": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+            "amount": "={{ $json.expense.amount }}",
+            "description": "={{ $json.expense.description }}",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        -128
+      ],
+      "id": "234bec20-cdb4-41ba-88d7-8a7722928c91",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jqlryJZOr0VuLMuc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 6,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        192
+      ],
+      "id": "91d856ff-512b-4747-bac1-7b9a2001a7b4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\n\nconst oneWeekAgo = new Date();\noneWeekAgo.setDate(oneWeekAgo.getDate() - 7);\n\nconst totals = {};\n\nfor (const row of rows) {\n  const rowDate = new Date(row.json.timestamp);\n\n  // Skip expenses older than one week\n  if (rowDate < oneWeekAgo) {\n    continue;\n  }\n\n  const chatId = row.json.chat_id;\n  const amount = parseFloat(row.json.amount) || 0;\n  const description = row.json.description || \"\";\n\n  // Initialize user if not seen before\n  if (!totals[chatId]) {\n    totals[chatId] = {\n      total: 0,\n      items: [],\n    };\n  }\n\n  // Update total\n  totals[chatId].total += amount;\n\n  // Save expense summary\n  totals[chatId].items.push(`${amount} - ${description}`);\n}\n\n// Convert grouped object into n8n items\nreturn Object.entries(totals).map(([chatId, data]) => ({\n  json: {\n    chat_id: chatId,\n    total: data.total,\n    summary: data.items.join(\", \"),\n  },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        192
+      ],
+      "id": "368a437a-f1f7-459f-a8e1-03657c8c4d7d",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id || $('Telegram Trigger').item.json.message.chat.id}}",
+        "text": "={{ $json.total || $json.reply}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        192
+      ],
+      "id": "6f41fcf7-fcfe-4e59-9d4c-36a1cf2d5c98",
+      "name": "Send a text message",
+      "webhookId": "f7c5617a-3fef-437f-9576-d73c2a0cd17f",
+      "credentials": {
+        "telegramApi": {
+          "id": "LHKh5rRCzoNfAF1K",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0",
+          "mode": "list",
+          "cachedResultName": "Expense_track",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 718577063,
+          "mode": "list",
+          "cachedResultName": "vikas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KoWagk9puO6n2CNvSDB3Rk-DJjD7KM9X4BDq58Vb4R0/edit#gid=718577063"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        192
+      ],
+      "id": "73a5f266-418f-403d-8135-4a16026aadef",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jqlryJZOr0VuLMuc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dd1a7b24-66b3-45cb-902d-9a1d310c1995",
+              "leftValue": "={{ $json.isExpense }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        -48
+      ],
+      "id": "1aae0f6d-9c56-498a-9311-28348ce67480",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "964e8720-764d-42cb-9b2c-b75ddc4c710b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9be16a71e28e8439f4fa8226a03a9f566afddefca384171ab66b903f66f3c53c"
+  },
+  "nodeGroups": [],
+  "id": "UlXEzbacpn251JbA",
+  "tags": []
+}
